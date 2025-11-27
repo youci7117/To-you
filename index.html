@@ -450,8 +450,7 @@
         const introLinesRaw = [
             "前段時間看到了這個",
             "我偷偷摸摸研究了一下",
-            "你是最特別的{name}。",
-            "所以，我把一些回憶做成了這個小東西，",
+            "把一些回憶做成了這個小東西，",
             "接下來的畫面，就只屬於你。"
         ];
 
@@ -614,9 +613,9 @@
                 let newRound = [];
 
                 for (let i = 0; i < count; i++) {
-                    let isImage = Math.random() < 0.7;
+                    let isImage = Math.random() < 0.35;
                     let box = document.createElement("div");
-                    box.className = "popupBox floatBubble";
+                    box.className = "popupBox floatBubble"; 
 
                     let floatDuration = Math.random() * 4 + 6; // 6~10 秒
                     box.style.setProperty("--float-duration", floatDuration + "s");
@@ -655,7 +654,7 @@
 
                 popupHistory = newRound;
 
-                let delay = Math.random() * 2000 + 3000;
+                let delay = Math.random() * 1000 + 800;
                 setTimeout(launchRound, delay);
             }
 
