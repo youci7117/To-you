@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Love Popup</title>
+
+    <style>
+        :root {
+            /* ★ 心跳節奏：這裡改秒數就能調心跳速度，例如 2s、1.8s、3.2s */
+            --heart-duration: 2.07s;
+        }
+
+        /* 全域設定 */
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #ffe6f2;
+            font-family: "Comic Sans MS", "Microsoft JhengHei", sans-serif;
+            user-select: none;
+            position: relative;
+        }
+
+        /* 背景心跳光暈（一般狀態） */
+        body::before {
+            content: "";
+            position: fixed;
+            inset: -60px;
+            background:
+                radial-gradient(
+                    circle at center,
+                    rgba(255, 140, 190, 0.85),
+                    rgba(255, 220, 240, 0.0) 65%
+                );
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 0;
+            animation: pulseHeart var(--heart-duration, 3s) ease-in-out infinite;
+            transform-origin: center center;
+        }
+
+        /* 進入畫面 */
+        #enterScreen {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, #ff9acb, #ffb7dd);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 2000;
+            animation: fadeIn 1s ease forwards;
+        }
+
+        #enterScreen h1 {
+            font-size: 32px;
+            color: white;
+            margin-bottom: 16px;
+            text-shadow: 0 4px 10px rgba(255, 255, 255, 0.6);
+        }
+
+        /* 名字輸入框 */
+        #nameInput {
+            padding: 10px 14px;
+            font-size: 18px;
+            border-radius: 20px;
+            border: none;
+            outline: none;
+            margin-bottom: 14px;
+            text-align: center;
+            width: 230px;
+            box-shadow: 0 3px 8px rgba(255, 105, 180, 0.45);
+        }
+
+        #enterBtn {
+            padding: 12px 30px;
+            font-size: 20px;
+            background: white;
+            color: #ff5fa2;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(255, 105, 180, 0.5);
+            transition: 0.3s;
+        }
+
+        #enterBtn:hover {
+            transform: scale(1.05);
+        }
+
+        /* ★ 開場文字畫面 introScreen */
+        #introScreen {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 230, 242, 0.88);
+            display: none; /* 一開始隱藏，按進入才顯示 */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1800;
+            backdrop-filter: blur(2px);
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        #introBox {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 24px 26px;
+            max-width: 85vw;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        }
+
+        #introTitle {
+            font-size: 20px;
+            color: #ff4f8b;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        #introText {
+            font-size: 22px;
+            color: #ff4f8b;
+            line-height: 1.6;
+            min-height: 120px;
+        }
+
+        .introLine {
+            margin: 6px 0;
+        }
+
+        /* 主區域容器 */
+        #mainArea {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        /* 彈窗容器 */
+        #popupContainer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 2;
+        }
+
+        /* 彈窗基礎樣式 */
+        .popupBox {
+            position: absolute;
+            background: white;
+            border-radius: 18px;
+            padding: 15px;
+            box-shadow: 0 6px 20px rgba(255, 105, 180, 0.35);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* 帶飄浮效果的彈窗 */
+        .popupBox.floatBubble {
+            animation:
+                fadeIn 0.6s ease forwards,
+                floatDown var(--float-duration, 7s) ease-in-out infinite alternate;
+        }
+
+        /* 圖片彈窗 */
+        .popupImg {
+            width: 240px;
+            border-radius: 12px;
+            display: block;
+        }
+
+        /* 文字彈窗 */
+        .popupText {
+            font-size: 20px;
+            color: #ff4f8b;
+            padding: 5px;
+            max-width: 260px;
+            text-align: center;
+        }
+
+        /* 小愛心 */
+        .heart {
+            position: fixed;
+            font-size: 24px;
+            color: #ff4f8b;
+            pointer-events: none;
+            animation: heartFloat 0.9s ease-out forwards;
+        }
+
+        /* 淡入效果 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* 泡泡微微上下飄、帶一點水平偏移 */
+        @keyframes floatDown {
+            from {
+                transform: translateY(0px) translateX(0px);
+            }
+            to {
+                transform: translateY(30px) translateX(10px);
+            }
+        }
+
+        /* 心跳光暈脈動動畫 */
+        @keyframes pulseHeart {
+            0% {
+                opacity: 0.35;
+                transform: scale(1);
+            }
+            35% {
+                opacity: 0.85;
+                transform: scale(1.06);
+            }
+            60% {
+                opacity: 0.45;
+                transform: scale(1.01);
+            }
+            100% {
+                opacity: 0.35;
+                transform: scale(1);
+            }
+        }
+
+        /* 舊彈窗淡出壓底（堆疊感 + 漸淡） */
+        .fadeOutLayer {
+            opacity: 0.4 !important;
+            z-index: 1 !important;
+            transition: opacity 1.2s ease;
+        }
+
+        /* 愛心往上飄 */
+        @keyframes heartFloat {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateY(-60px);
+                opacity: 0;
+            }
+        }
+
+        /* === 最後告白畫面：星空＋流星背景 === */
+        #finalScreen {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at top, #25335a 0%, #050814 55%, #000000 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        /* 星星層 */
+        .starLayer {
+            position: absolute;
+            inset: 0;
+            background-image:
+                radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.8), transparent),
+                radial-gradient(2px 2px at 30% 80%, rgba(255,255,255,0.7), transparent),
+                radial-gradient(2px 2px at 70% 30%, rgba(255,255,255,0.9), transparent),
+                radial-gradient(1.5px 1.5px at 90% 60%, rgba(255,255,255,0.6), transparent),
+                radial-gradient(1.5px 1.5px at 50% 50%, rgba(255,255,255,0.6), transparent);
+            background-repeat: no-repeat;
+            opacity: 0.9;
+            animation: starDrift 30s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* 流星層 */
+        .meteorLayer {
+            position: absolute;
+            width: 180px;
+            height: 2px;
+            background: linear-gradient(
+                to left,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0.9),
+                rgba(255,255,255,0)
+            );
+            top: -10%;
+            left: 110%;
+            transform: rotate(-25deg);
+            opacity: 0;
+            animation: meteorShoot 2.5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 星空星星位移動畫（慢慢滑動） */
+        @keyframes starDrift {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+            100% {
+                transform: translate3d(-40px, 20px, 0);
+            }
+        }
+
+        /* 流星動畫：淡入→掠過→淡出 */
+        @keyframes meteorShoot {
+            0% {
+                opacity: 0;
+                transform: translate3d(0, 0, 0) rotate(-25deg);
+            }
+            10% {
+                opacity: 1;
+            }
+            40% {
+                opacity: 0.8;
+                transform: translate3d(-140%, 120%, 0) rotate(-25deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate3d(-160%, 140%, 0) rotate(-25deg);
+            }
+        }
+
+        .finalBox {
+            position: relative;
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 90vw;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+            text-align: center;
+            z-index: 2;
+        }
+
+        .finalImg {
+            width: min(80vw, 360px);
+            border-radius: 16px;
+            display: block;
+            margin: 0 auto 15px;
+        }
+
+        .finalText {
+            font-size: 22px;
+            margin-top: 10px;
+            white-space: pre-line;
+            text-shadow:
+                0 0 6px rgba(255, 105, 180, 0.6),
+                0 0 14px rgba(255, 255, 255, 0.9);
+            background: linear-gradient(120deg, #ff9acb, #ffd1f0);
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        /* ★ 結尾按鈕 */
+        .finalBtn {
+            margin-top: 16px;
+            padding: 8px 20px;
+            font-size: 18px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            background: #ff9acb;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .finalBtn:hover {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 進入畫面 -->
+    <div id="enterScreen">
+        <h1>💕 給你的小驚喜 💕</h1>
+        <input id="nameInput" type="text" placeholder="你的名字？" />
+        <button id="enterBtn">進入</button>
+    </div>
+
+    <!-- 開場文字畫面（按進入後出現） -->
+    <div id="introScreen">
+        <div id="introBox">
+            <div id="introTitle">偷偷跟你說一些小事</div>
+            <div id="introText"></div>
+        </div>
+    </div>
+
+    <!-- 主區域 -->
+    <div id="mainArea">
+        <div id="popupContainer"></div>
+    </div>
+
+    <!-- 背景音樂 -->
+    <audio id="bgm" src="w7dov-s8f16.mp3" preload="auto"></audio>
+
+    <script>
+        // ░░░ 你的 28 張圖片 ░░░
+        const imageList = [
+            "90145.jpg","90144.jpg","90143.jpg","90140.jpg",
+            "90138.jpg","90137.jpg","90102.jpg","90100.jpg",
+            "90097.jpg","90095.jpg","90094.jpg","90093.jpg",
+            "90092.jpg","90090.jpg","90089.jpg","90088.jpg",
+        ];
+
+        // ░░░ 告白文字（用 {name} 當佔位符） ░░░
+        const textList = [
+            "今天也要開心，{name}！",
+            "天天开心！",
+            "事事如意！",
+            "如願以償",
+            "{name}高不高級！",
+            "{name}是最厲害的！",
+            "{name}萌萌",
+            "我親親{name}",
+            "我是{name}的小狗！",
+            "老公！",
+            "姐姐~",
+            "寶寶！",
+            "親親！",
+            "抱抱！",
+            "時間還有很多，你可別偷偷溜走嗎",
+            "我喜歡的小娘子",
+            "我喜歡你！",
+            "喜歡{name}！",
+            "小娘子~",
+            "我想你了!",
+            "我喜歡你，{name}！",
+            "萌鼠了",
+            "我想跟你好",
+            "想跟你度過又一個冬天",
+            "跟{name}聊天我很開心"
+        ];
+
+        // ░░░ 最後一張大圖＆最後一段話 ░░░
+        const finalImage = "90101.jpg";
+        const finalMessage = "我喜歡你！\n希望你今天能過得愉快！";
+
+        // ░░░ 開場打字動畫要顯示的文字（{name} 會被換掉） ░░░
+        const introLinesRaw = [
+            "前段時間看到了這個",
+            "我偷偷摸摸研究了一下",
+            "你是最特別的{name}。",
+            "所以，我把一些回憶做成了這個小東西，",
+            "接下來的畫面，就只屬於你。"
+        ];
+
+        const popupContainer = document.getElementById("popupContainer");
+        const enterScreen = document.getElementById("enterScreen");
+        const enterBtn = document.getElementById("enterBtn");
+        const bgm = document.getElementById("bgm");
+        const nameInput = document.getElementById("nameInput");
+        const introScreen = document.getElementById("introScreen");
+        const introText = document.getElementById("introText");
+
+        let popupHistory = [];
+        let popupRunning = false;
+        let clickCount = 0;
+        let finalShown = false;
+        let targetName = "你";
+
+        // 開場動畫／預載狀態旗標
+        let imagesLoaded = false;
+        let introDone = false;
+
+        // ░░░ 預載圖片（28 張 + 最後大圖） ░░░
+        function preloadImages() {
+            const allImages = [...imageList, finalImage];
+            let loaded = 0;
+            const total = allImages.length;
+
+            if (total === 0) {
+                imagesLoaded = true;
+                maybeStartMain();
+                return;
+            }
+
+            allImages.forEach(src => {
+                const img = new Image();
+                img.onload = img.onerror = function () {
+                    loaded++;
+                    if (loaded >= total) {
+                        imagesLoaded = true;
+                        maybeStartMain();
+                    }
+                };
+                img.src = src;
+            });
+
+            // 安全機制：最多等 10 秒，避免極端網路卡死在開場
+            setTimeout(() => {
+                if (!imagesLoaded) {
+                    imagesLoaded = true;
+                    maybeStartMain();
+                }
+            }, 10000);
+        }
+
+        // ░░░ 開場打字動畫 ░░░
+        function startIntroTyping() {
+            introText.innerHTML = "";
+            const introLines = introLinesRaw.map(line =>
+                line.replaceAll("{name}", targetName)
+            );
+
+            let lineIndex = 0;
+            let charIndex = 0;
+            let currentLineEl = null;
+
+            function typeNext() {
+                if (lineIndex >= introLines.length) {
+                    // 全部打完，稍微停一下再結束
+                    setTimeout(() => {
+                        introDone = true;
+                        maybeStartMain();
+                    }, 800);
+                    return;
+                }
+
+                const line = introLines[lineIndex];
+
+                if (!currentLineEl) {
+                    currentLineEl = document.createElement("div");
+                    currentLineEl.className = "introLine";
+                    introText.appendChild(currentLineEl);
+                }
+
+                currentLineEl.textContent = line.slice(0, charIndex + 1);
+                charIndex++;
+
+                if (charIndex < line.length) {
+                    setTimeout(typeNext, 70);  // 打字速度
+                } else {
+                    // 一行結束，換下一行
+                    lineIndex++;
+                    charIndex = 0;
+                    currentLineEl = null;
+                    setTimeout(typeNext, 600); // 每行之間停頓一下
+                }
+            }
+
+            typeNext();
+        }
+
+        // ░░░ 開場與預載都完成 → 進入彈窗主世界 ░░░
+        function maybeStartMain() {
+            if (imagesLoaded && introDone) {
+                introScreen.style.display = "none";
+                startPopupLoop();
+            }
+        }
+
+        // ░░░ 點「進入」後 ░░░
+        enterBtn.onclick = function () {
+            const v = nameInput.value.trim();
+            targetName = v || "你";
+
+            // 關掉封面
+            enterScreen.style.display = "none";
+
+            // 顯示開場文字畫面
+            introScreen.style.display = "flex";
+
+            // 播放音樂（漸漸變大聲）
+            bgm.volume = 0;
+            bgm.play().catch(() => {});
+
+            let vol = 0;
+            let fade = setInterval(() => {
+                if (vol < 0.5) {
+                    vol += 0.02;
+                    bgm.volume = vol;
+                } else {
+                    clearInterval(fade);
+                }
+            }, 120);
+
+            // 同時啟動：預載圖片 + 開場打字動畫
+            preloadImages();
+            startIntroTyping();
+        };
+
+        // ░░░ 主循環：每一輪隨機彈出 2–4 個 ░░░
+        function startPopupLoop() {
+            if (popupRunning) return;  // 避免重複啟動多個 loop
+            popupRunning = true;
+
+            function launchRound() {
+                if (!popupRunning) return;
+
+                // 舊的一輪
+                const oldPopups = popupHistory;
+                oldPopups.forEach(box => {
+                    setTimeout(() => {
+                        box.classList.add("fadeOutLayer");
+                    }, 2000);
+                    setTimeout(() => {
+                        if (box.parentNode) box.remove();
+                    }, 8000);
+                });
+
+                // 新的一輪
+                let count = Math.floor(Math.random() * 3) + 2; // 2~4 個
+                let newRound = [];
+
+                for (let i = 0; i < count; i++) {
+                    let isImage = Math.random() < 0.7;
+                    let box = document.createElement("div");
+                    box.className = "popupBox floatBubble";
+
+                    let floatDuration = Math.random() * 4 + 6; // 6~10 秒
+                    box.style.setProperty("--float-duration", floatDuration + "s");
+
+                    let size = Math.random() * 80 + 180;
+
+                    if (isImage) {
+                        let img = document.createElement("img");
+                        img.src = imageList[Math.floor(Math.random() * imageList.length)];
+                        img.className = "popupImg";
+                        img.style.width = size + "px";
+                        box.appendChild(img);
+                    } else {
+                        let txt = document.createElement("div");
+                        txt.className = "popupText";
+
+                        let raw = textList[Math.floor(Math.random() * textList.length)];
+                        let msg = raw.replaceAll("{name}", targetName);
+                        txt.innerText = msg;
+
+                        box.appendChild(txt);
+                    }
+
+                    let maxX = window.innerWidth - 260;
+                    let maxY = window.innerHeight - 260;
+                    let x = Math.random() * maxX;
+                    let y = Math.random() * maxY;
+
+                    box.style.left = x + "px";
+                    box.style.top = y + "px";
+                    box.style.zIndex = 1500;
+
+                    popupContainer.appendChild(box);
+                    newRound.push(box);
+                }
+
+                popupHistory = newRound;
+
+                let delay = Math.random() * 2000 + 3000;
+                setTimeout(launchRound, delay);
+            }
+
+            setTimeout(launchRound, 1000);
+        }
+
+        // ░░░ 顯示最後大圖＋文字（結束畫面：星空） ░░░
+        function showFinal() {
+            if (finalShown) return;
+            finalShown = true;
+            // 不把 popupRunning 設成 false，讓彈窗在背後繼續跑
+
+            const overlay = document.createElement("div");
+            overlay.id = "finalScreen";
+
+            // 星空 + 流星層
+            const stars = document.createElement("div");
+            stars.className = "starLayer";
+            const meteor = document.createElement("div");
+            meteor.className = "meteorLayer";
+
+            const box = document.createElement("div");
+            box.className = "finalBox";
+
+            const img = document.createElement("img");
+            img.src = finalImage;
+            img.className = "finalImg";
+
+            const text = document.createElement("div");
+            text.className = "finalText";
+            text.innerText = finalMessage;
+
+            const btn = document.createElement("button");
+            btn.className = "finalBtn";
+            btn.innerText = "我也喜歡俠緣";
+
+            // 按鈕：關閉結尾畫面，回到彈窗世界
+            btn.onclick = () => {
+                overlay.remove();
+                // 不重置 finalShown：不再出第二次結局
+            };
+
+            box.appendChild(img);
+            box.appendChild(text);
+            box.appendChild(btn);
+
+            overlay.appendChild(stars);
+            overlay.appendChild(meteor);
+            overlay.appendChild(box);
+
+            document.body.appendChild(overlay);
+        }
+
+        // ░░░ 點擊畫面時：愛心 + 統計點擊次數 ░░░
+        document.addEventListener("click", function (e) {
+            // 封面或開場動畫時，都不要出愛心／不要計點擊
+            if (enterScreen.style.display !== "none") return;
+            if (introScreen.style.display !== "none") return;
+
+            if (!finalShown) {
+                clickCount++;
+                if (clickCount >= 5) {
+                    showFinal();
+                }
+            }
+
+            let heart = document.createElement("div");
+            heart.className = "heart";
+            heart.innerText = "❤";
+
+            heart.style.left = e.clientX + "px";
+            heart.style.top = e.clientY + "px";
+
+            document.body.appendChild(heart);
+
+            setTimeout(() => heart.remove(), 900);
+        });
+    </script>
+</body>
+</html>
