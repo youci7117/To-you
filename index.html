@@ -264,24 +264,51 @@
             animation: fadeIn 0.8s ease forwards;
         }
 
-        /* 星星層 */
+        /* ★ 星星底層（緩慢位移） */
         .starLayer {
             position: absolute;
             inset: 0;
-            background-image:
-                radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.8), transparent),
-                radial-gradient(2px 2px at 30% 80%, rgba(255,255,255,0.7), transparent),
-                radial-gradient(2px 2px at 70% 30%, rgba(255,255,255,0.9), transparent),
-                radial-gradient(1.5px 1.5px at 90% 60%, rgba(255,255,255,0.6), transparent),
-                radial-gradient(1.5px 1.5px at 50% 50%, rgba(255,255,255,0.6), transparent);
-            background-repeat: no-repeat;
-            opacity: 0.9;
-            animation: starDrift 30s linear infinite;
+            overflow: hidden;
             pointer-events: none;
             z-index: 0;
+            animation: starDrift 60s linear infinite;
         }
 
-        /* 流星層 */
+        /* ★ 單顆小星星（大量隨機產生） */
+        .starDot {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            opacity: 0.5;
+            box-shadow: 0 0 4px rgba(255,255,255,0.9);
+            animation: twinkle var(--twinkle-duration, 3s) ease-in-out infinite;
+        }
+
+        /* 星星閃爍 */
+        @keyframes twinkle {
+            0%, 100% {
+                opacity: 0.25;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.7);
+            }
+        }
+
+        /* 星空平移一點點（營造深度感） */
+        @keyframes starDrift {
+            0% {
+                transform: translate3d(0, 0, 0);
+            }
+            100% {
+                transform: translate3d(-60px, 40px, 0);
+            }
+        }
+
+        /* ★ 流星：每一顆獨立動畫一次，由 JS 隨機產生 */
         .meteorLayer {
             position: absolute;
             width: 180px;
@@ -289,26 +316,14 @@
             background: linear-gradient(
                 to left,
                 rgba(255,255,255,0),
-                rgba(255,255,255,0.9),
+                rgba(255,255,255,0.95),
                 rgba(255,255,255,0)
             );
-            top: -10%;
-            left: 110%;
-            transform: rotate(-25deg);
             opacity: 0;
-            animation: meteorShoot 2.5s ease-in-out infinite;
             pointer-events: none;
             z-index: 1;
-        }
-
-        /* 星空星星位移動畫（慢慢滑動） */
-        @keyframes starDrift {
-            0% {
-                transform: translate3d(0, 0, 0);
-            }
-            100% {
-                transform: translate3d(-40px, 20px, 0);
-            }
+            transform-origin: center;
+            animation: meteorShoot var(--meteor-duration, 2.4s) ease-in-out forwards;
         }
 
         /* 流星動畫：淡入→掠過→淡出 */
@@ -320,13 +335,13 @@
             10% {
                 opacity: 1;
             }
-            40% {
-                opacity: 0.8;
-                transform: translate3d(-140%, 120%, 0) rotate(-25deg);
+            45% {
+                opacity: 0.85;
+                transform: translate3d(-160%, 150%, 0) rotate(-25deg);
             }
             100% {
                 opacity: 0;
-                transform: translate3d(-160%, 140%, 0) rotate(-25deg);
+                transform: translate3d(-190%, 180%, 0) rotate(-25deg);
             }
         }
 
@@ -405,7 +420,7 @@
     <audio id="bgm" src="w7dov-s8f16.mp3" preload="auto"></audio>
 
     <script>
-        // ░░░ 你的 28 張圖片 ░░░
+        // ░░░ 你的 圖片 ░░░
         const imageList = [
             "90145.jpg","90144.jpg","90143.jpg","90140.jpg",
             "90138.jpg","90137.jpg","90102.jpg","90100.jpg",
@@ -416,35 +431,35 @@
         // ░░░ 告白文字（用 {name} 當佔位符） ░░░
         const textList = [
             "今天也要開心，{name}！",
-            "天天开心！",
+            "天天開心！",
             "事事如意！",
-            "如願以償",
+            "如願以償。",
             "{name}高不高級！",
             "{name}是最厲害的！",
             "{name}萌萌",
-            "{name}是最可愛的!",
+            "{name}是最可愛的！",
             "我親親{name}",
             "我是{name}的小狗！",
             "老公！",
-            "姐姐~",
+            "姐姐～",
             "寶寶！",
             "親親！",
             "抱抱！",
-            "時間還有很多，你可別偷偷溜走嗎",
-            "我喜歡的小娘子",
+            "時間還有很多，你可別偷偷溜走嘛。",
+            "我喜歡的小娘子。",
             "我喜歡你！",
             "我喜歡你！",
             "我喜歡你！",
             "我喜歡你！",
             "我喜歡你！",
             "喜歡{name}！",
-            "小娘子~",
-            "我想你了!",
+            "小娘子～",
+            "我想你了！",
             "我喜歡你，{name}！",
-            "萌鼠了",
-            "我想跟你好",
-            "想跟你度過又一個冬天",
-            "跟{name}聊天我很開心"
+            "萌鼠了。",
+            "我想跟你好。",
+            "想跟你度過又一個冬天。",
+            "跟{name}聊天我很開心。"
         ];
 
         // ░░░ 最後一張大圖＆最後一段話 ░░░
@@ -453,11 +468,11 @@
 
         // ░░░ 開場打字動畫要顯示的文字（{name} 會被換掉） ░░░
         const introLinesRaw = [
-            "前段時間看到了這個",
-            "我偷偷摸摸研究了一下",
+            "前段時間看到了這個，",
+            "我偷偷摸摸研究了一下，",
             "把一些回憶做成了這個小東西，",
             "接下來的畫面，就只屬於你。",
-            "提示，進入後可以點擊畫面五下"
+            "小提示：進入後可以點擊畫面五下。"
         ];
 
         const popupContainer = document.getElementById("popupContainer");
@@ -478,7 +493,7 @@
         let imagesLoaded = false;
         let introDone = false;
 
-        // ░░░ 預載圖片（28 張 + 最後大圖） ░░░
+        // ░░░ 預載圖片 ░░░
         function preloadImages() {
             const allImages = [...imageList, finalImage];
             let loaded = 0;
@@ -621,7 +636,7 @@
                 for (let i = 0; i < count; i++) {
                     let isImage = Math.random() < 0.35;
                     let box = document.createElement("div");
-                    box.className = "popupBox floatBubble"; 
+                    box.className = "popupBox floatBubble";
 
                     let floatDuration = Math.random() * 4 + 6; // 6~10 秒
                     box.style.setProperty("--float-duration", floatDuration + "s");
@@ -676,11 +691,31 @@
             const overlay = document.createElement("div");
             overlay.id = "finalScreen";
 
-            // 星空 + 流星層
+            // ★ 星空層容器
             const stars = document.createElement("div");
             stars.className = "starLayer";
-            const meteor = document.createElement("div");
-            meteor.className = "meteorLayer";
+
+            // 動態產生大量星星
+            const STAR_COUNT = 90;  // 想更爆就改大
+            for (let i = 0; i < STAR_COUNT; i++) {
+                const s = document.createElement("div");
+                s.className = "starDot";
+                s.style.left = Math.random() * 100 + "%";
+                s.style.top = Math.random() * 100 + "%";
+
+                // 大小有一點差異
+                const size = 1 + Math.random() * 2;
+                s.style.width = size + "px";
+                s.style.height = size + "px";
+
+                // 閃爍速度 & 延遲不一樣
+                const twinkleDuration = 2 + Math.random() * 3; // 2~5 秒
+                const twinkleDelay = Math.random() * 3;        // 0~3 秒
+                s.style.setProperty("--twinkle-duration", twinkleDuration + "s");
+                s.style.animationDelay = twinkleDelay + "s";
+
+                stars.appendChild(s);
+            }
 
             const box = document.createElement("div");
             box.className = "finalBox";
@@ -708,10 +743,42 @@
             box.appendChild(btn);
 
             overlay.appendChild(stars);
-            overlay.appendChild(meteor);
             overlay.appendChild(box);
 
             document.body.appendChild(overlay);
+
+            // ★ 每一顆流星：用 JS 隨機生成 + 單次動畫
+            function spawnMeteor() {
+                // 如果結尾畫面被關掉，就停
+                if (!document.body.contains(overlay)) return;
+
+                const m = document.createElement("div");
+                m.className = "meteorLayer";
+
+                // 隨機起點（畫面右上方某一帶）
+                const startTop = -10 + Math.random() * 40;   // -10% ~ 30%
+                const startLeft = 90 + Math.random() * 40;   // 90% ~ 130%
+                m.style.top = startTop + "%";
+                m.style.left = startLeft + "%";
+
+                // 每顆速度稍微不同
+                const duration = 1.8 + Math.random() * 1.6; // 1.8 ~ 3.4 秒
+                m.style.setProperty("--meteor-duration", duration + "s");
+
+                overlay.appendChild(m);
+
+                // 動畫結束就移除
+                m.addEventListener("animationend", () => {
+                    m.remove();
+                });
+
+                // 下一顆流星的間隔（0.8~2.6 秒）
+                const wait = 800 + Math.random() * 1800;
+                setTimeout(spawnMeteor, wait);
+            }
+
+            // 啟動第一顆流星
+            setTimeout(spawnMeteor, 700);
         }
 
         // ░░░ 點擊畫面時：愛心 + 統計點擊次數 ░░░
